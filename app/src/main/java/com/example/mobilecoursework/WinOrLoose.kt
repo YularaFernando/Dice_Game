@@ -42,14 +42,6 @@ fun WinOrLose(playerWon: Boolean) {
                 color = Color.White,
                 fontFamily = FontFamily.Cursive
             )
-
-            Text(
-                text = "Let's try again ❤\uFE0F\u200D\uD83E\uDE79",
-                fontSize = 50.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                fontFamily = FontFamily.Default
-            )
         }
     }
 }

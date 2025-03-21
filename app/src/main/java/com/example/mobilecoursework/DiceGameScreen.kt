@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.delay
 
 @Composable
@@ -50,20 +51,26 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
     }
 
     // Logic for AI roll delay
+    // AI Roll Logic
     LaunchedEffect(isAiRolling) {
         if (isAiRolling) {
-            delay(1500)  // Delay before AI rolls (1.5 seconds)
+            delay(800)  // Delay before AI rolls (0.8 seconds)
             aiRolls = List(5) { (1..6).random() }
             roundAiTotal = aiRolls.sum()
-
             aiTotal += roundAiTotal
 
+            // Check if either the player or AI has reached or exceeded 101 points
             if (playerTotal >= 101 || aiTotal >= 101) {
                 gameEnded = true
+                // Determine the winner based on who has the higher score
                 playerWon = playerTotal >= 101 && playerTotal > aiTotal
             }
+
+            // Reset AI rolling state after AI completes its turn
+            isAiRolling = false
         }
     }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Background image
@@ -73,7 +80,6 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -202,13 +208,23 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(40.dp))
+
+                Text(
+                    text = "Reach the goal 101 first to be the winner !",
+                    fontSize = 27.sp,
+                    //fontWeight = FontWeight.SemiBold,
+                    fontFamily = FontFamily.Serif,
+                    textAlign = TextAlign.Center,
+                    color = Color.White
+                )
 
             } else {
                 // Display results (win/loss/draw)
                 WinOrLose(playerWon = playerWon)
             }
 
+            Spacer(modifier = Modifier.weight(0.1f))
             // Back Button
             Button(
                 onClick = { onBackClick() },
