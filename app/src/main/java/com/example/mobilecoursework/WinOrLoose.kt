@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun WinOrLose(playerWon: Boolean) {
+fun WinOrLose(playerWon: Boolean, onBackClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -24,24 +24,35 @@ fun WinOrLose(playerWon: Boolean) {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
-        }
-        if (playerWon) {
-            Text(
-                text = "You won \uD83E\uDD47",
-                fontSize = 60.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                fontFamily = FontFamily.Cursive
-            )
+            if (playerWon) {
+                Text(
+                    text = "You win",
+                    fontSize = 60.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Green,
+                    fontFamily = FontFamily.Serif
+                )
+            } else {
+                Text(
+                    text = "You Lost",
+                    fontSize = 60.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Red,
+                    fontFamily = FontFamily.Serif
+                )
+            }
 
-        } else {
-            Text(
-                text = "You Lost \uD83D\uDE13",
-                fontSize = 60.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                fontFamily = FontFamily.Cursive
-            )
+            Spacer(modifier = Modifier.weight(1f)) // Push the button to the bottom
+
+            Button(
+                onClick = onBackClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth(0.4f)
+            ) {
+                Text("Back", fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White)
+            }
         }
     }
 }

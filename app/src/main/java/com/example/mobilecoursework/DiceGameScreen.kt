@@ -22,56 +22,57 @@ import kotlinx.coroutines.delay
 fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
     var playerRolls by remember { mutableStateOf(List(5) { (1..6).random() }) }
     var aiRolls by remember { mutableStateOf(List(5) { (1..6).random() }) }
+
     var playerTotal by remember { mutableStateOf(0) }
     var aiTotal by remember { mutableStateOf(0) }
-    var gameEnded by remember { mutableStateOf(false) }
-    var playerWon by remember { mutableStateOf(false) }
-    var isAiRolling by remember { mutableStateOf(false) }
 
     var roundPlayerTotal by remember { mutableStateOf(0) }
     var roundAiTotal by remember { mutableStateOf(0) }
 
-    var selectedDice by remember { mutableStateOf(MutableList(5) { false }) }
     var rollCount by remember { mutableStateOf(1) }
+    var selectedDice by remember { mutableStateOf(MutableList(5) { false }) }
 
-    val playerImages = playerRolls.map {
-        when (it) {
-            1 -> R.drawable.dice_1
-            2 -> R.drawable.dice_2
-            3 -> R.drawable.dice_3
-            4 -> R.drawable.dice_4
-            5 -> R.drawable.dice_5
-            else -> R.drawable.dice_6
-        }
-    }
+    var isPlayerTurn by remember { mutableStateOf(true) }
+    var gameEnded by remember { mutableStateOf(false) }
+    var playerWon by remember { mutableStateOf(false) }
 
-    val aiImages = aiRolls.map {
-        when (it) {
-            1 -> R.drawable.dice_1
-            2 -> R.drawable.dice_2
-            3 -> R.drawable.dice_3
-            4 -> R.drawable.dice_4
-            5 -> R.drawable.dice_5
-            else -> R.drawable.dice_6
-        }
-    }
+    // Automatically play AI's turn when it's their turn
+    LaunchedEffect(isPlayerTurn) {
+        if (!isPlayerTurn && !gameEnded) {
+            delay(1000)
+            var aiCurrentRolls = List(5) { (1..6).random() }
+            var aiCurrentTotal = aiCurrentRolls.sum()
 
-    // AI roll logic
-    LaunchedEffect(isAiRolling) {
-        if (isAiRolling) {
-            delay(800)
-            aiRolls = List(5) { (1..6).random() }
-            roundAiTotal = aiRolls.sum()
-            aiTotal += roundAiTotal
+            // Simulate 2 rerolls (randomly deciding to reroll)
+            repeat(2) {
+                val indicesToReroll = List(5) { it }.shuffled().take((0..5).random())
+                aiCurrentRolls = aiCurrentRolls.mapIndexed { index, value ->
+                    if (index in indicesToReroll) (1..6).random() else value
+                }
+                aiCurrentTotal = aiCurrentRolls.sum()
+            }
 
-            if (playerTotal >= 101 || aiTotal >= 101) {
+            aiRolls = aiCurrentRolls
+            roundAiTotal = aiCurrentTotal
+            aiTotal += aiCurrentTotal
+
+            if (aiTotal >= 101 || playerTotal >= 101) {
                 gameEnded = true
                 playerWon = playerTotal >= 101 && playerTotal > aiTotal
             }
 
-            isAiRolling = false
+            isPlayerTurn = true
+            rollCount = 1
+            selectedDice = MutableList(5) { false }
         }
     }
+
+    val diceImages = listOf(
+        R.drawable.dice_1, R.drawable.dice_2, R.drawable.dice_3,
+        R.drawable.dice_4, R.drawable.dice_5, R.drawable.dice_6
+    )
+
+    fun getDiceImage(value: Int) = diceImages[value - 1]
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -87,141 +88,133 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             if (!gameEnded) {
-                // === AI Section ===
+                // === AI Display ===
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("AI", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("AI", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        aiImages.forEach { image ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        aiRolls.forEach {
                             Image(
-                                painter = painterResource(id = image),
+                                painter = painterResource(id = getDiceImage(it)),
                                 contentDescription = "AI Dice",
-                                modifier = Modifier.size(69.dp)
+                                modifier = Modifier.size(65.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Text("This Round's Total is $roundAiTotal", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text("Ai's Full Score is $aiTotal", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text("Round Total: $roundAiTotal", fontSize = 18.sp, color = Color.White)
+                    Text("AI Total Score: $aiTotal", fontSize = 18.sp, color = Color.White)
                 }
 
-                Spacer(modifier = Modifier.height(60.dp))
+                Spacer(modifier = Modifier.height(30.dp))
 
-                // === Player Section ===
+                // === Player Display ===
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("You", fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif, color = Color.White)
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Text("You", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        playerImages.forEachIndexed { index, image ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        playerRolls.forEachIndexed { index, value ->
                             Box(
                                 modifier = Modifier
-                                    .size(69.dp)
-                                    .clickable(enabled = rollCount < 3) {
+                                    .size(65.dp)
+                                    .clickable(enabled = rollCount < 3 && isPlayerTurn) {
+                                        // Toggle the selection of the clicked dice
                                         selectedDice[index] = !selectedDice[index]
                                     }
                             ) {
+                                // Display the dice image
                                 Image(
-                                    painter = painterResource(id = image),
+                                    painter = painterResource(id = getDiceImage(value)),
                                     contentDescription = "Player Dice",
-                                    modifier = Modifier.matchParentSize()
+                                    modifier = Modifier.fillMaxSize()
                                 )
+                                // If the dice is selected, add a visual indicator (e.g., semi-transparent overlay)
                                 if (selectedDice[index]) {
                                     Box(
                                         modifier = Modifier
                                             .matchParentSize()
-                                            .background(Color(0x88000000))
+                                            .background(Color(0x88000000))  // Semi-transparent black overlay
                                     )
                                 }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(25.dp))
-                    Text("This Round's Total is $roundPlayerTotal", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text("Your Full Score is $playerTotal", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    roundPlayerTotal = playerRolls.sum()
+                    Text("Round Total: $roundPlayerTotal", fontSize = 18.sp, color = Color.White)
+                    Text("Your Total Score: $playerTotal", fontSize = 18.sp, color = Color.White)
+
                     Spacer(modifier = Modifier.height(20.dp))
 
+                    // === Roll Button ===
                     Button(
                         onClick = {
                             if (rollCount == 1) {
-                                // First roll: roll all
+                                // First full roll (initial roll)
                                 playerRolls = List(5) { (1..6).random() }
                             } else {
-                                // Reroll selected
-                                playerRolls = playerRolls.mapIndexed { i, oldValue ->
-                                    if (selectedDice[i]) (1..6).random() else oldValue
+                                // Subsequent rounds (allow re-rolling selected dice or all dice)
+                                playerRolls = playerRolls.mapIndexed { i, v ->
+                                    if (selectedDice[i]) (1..6).random() else v
                                 }
                             }
-
-                            selectedDice = MutableList(5) { false }
-                            roundPlayerTotal = playerRolls.sum()
-                            rollCount++
-
-                            if (rollCount > 3) {
-                                // End of player turn
-                                playerTotal += roundPlayerTotal
-                                if (playerTotal >= 101) {
-                                    gameEnded = true
-                                    playerWon = true
-                                } else {
-                                    isAiRolling = true
-                                }
-                                rollCount = 1
-                            }
+                            rollCount++  // Increment roll count after each roll
+                            selectedDice = MutableList(5) { false }  // Reset selected dice after each roll
                         },
-                        enabled = !isAiRolling && !gameEnded,
-                        modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .padding(8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Black,
-                            contentColor = Color.White
-                        )
+                        enabled = isPlayerTurn && rollCount < 3,  // Allow 3 rolls: 1 initial + 2 subsequent rerolls
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black, contentColor = Color.White)
                     ) {
-                        Text("Roll", fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                        Text("Roll (${rollCount}/3)", fontSize = 18.sp, fontWeight = FontWeight.Bold)  // Display the current roll count
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // === Keep Score Button ===
+                    Button(
+                        onClick = {
+                            playerTotal += roundPlayerTotal
+                            if (playerTotal >= 101 || aiTotal >= 101) {
+                                gameEnded = true
+                                playerWon = playerTotal >= 101 && playerTotal > aiTotal
+                            } else {
+                                isPlayerTurn = false
+                            }
+                            rollCount = 1
+                            selectedDice = MutableList(5) { false }
+                        },
+                        enabled = isPlayerTurn,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray, contentColor = Color.White)
+                    ) {
+                        Text("Keep Score", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))
-                Text(
-                    text = "Reach the goal 101 first to be the winner !",
-                    fontSize = 27.sp,
-                    fontFamily = FontFamily.Serif,
-                    textAlign = TextAlign.Center,
-                    color = Color.White
-                )
+                Text("Reach 101 to Win!", fontSize = 22.sp, fontFamily = FontFamily.Serif, color = Color.White)
+
             } else {
-                WinOrLose(playerWon = playerWon)
+                WinOrLose(playerWon = playerWon, onBackClick = onBackClick)
             }
 
-            Spacer(modifier = Modifier.weight(0.1f))
+            Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = { onBackClick() },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = Color.Black
-                ),
+                onClick = onBackClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth(0.3f)
                     .padding(bottom = 16.dp)
             ) {
-                Text("Back", fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                Text("Back", fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White)
             }
         }
     }
