@@ -48,7 +48,7 @@ fun MainScreen() {
         ) {
             // Background Image
             Image(
-                painter = painterResource(id = R.drawable.background),
+                painter = painterResource(id = R.drawable.wallpaper),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -69,14 +69,13 @@ fun MainScreen() {
                     onClick = { showGameScreen = true },  // Navigate to the DiceGameScreen
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent, // transparent background
-                        contentColor = Color.White          // text color
                     ),
                 ) {
                     Text(
                         text = "New Game",
-                        fontSize = 27.sp,
+                        fontSize = 30.sp,
                         fontFamily = FontFamily.Serif,
-                        color = Color.Black,
+                        color = Color.DarkGray,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -88,14 +87,13 @@ fun MainScreen() {
                     onClick = { showDialog = true },  // Show the dialog
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent, // transparent background
-                        contentColor = Color.White          // text color
                     ),
                 ) {
                     Text(
                         text = "About",
-                        fontSize = 27.sp,
+                        fontSize = 30.sp,
                         fontFamily = FontFamily.Serif,
-                        color = Color.Black,
+                        color = Color.DarkGray,
                         fontWeight = FontWeight.Bold
                     )
                 }
