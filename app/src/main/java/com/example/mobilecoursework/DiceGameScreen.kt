@@ -29,12 +29,16 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
     var roundPlayerTotal by remember { mutableStateOf(0) }
     var roundAiTotal by remember { mutableStateOf(0) }
 
-    var rollCount by remember { mutableStateOf(1) }
-    var selectedDice by remember { mutableStateOf(MutableList(5) { false }) }
+    var rollCount by remember { mutableStateOf(0) } // Track the roll count (start at 0)
+    var selectedDice by remember { mutableStateOf(MutableList(5) { false }) } // Track selected dice
 
     var isPlayerTurn by remember { mutableStateOf(true) }
     var gameEnded by remember { mutableStateOf(false) }
     var playerWon by remember { mutableStateOf(false) }
+
+    // Keep track of scores for 1st and 2nd round
+    var roundOneScore by remember { mutableStateOf(0) }
+    var roundTwoScore by remember { mutableStateOf(0) }
 
     // Automatically play AI's turn when it's their turn
     LaunchedEffect(isPlayerTurn) {
@@ -62,7 +66,7 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
             }
 
             isPlayerTurn = true
-            rollCount = 1
+            rollCount = 0  // Reset roll count after AI's turn
             selectedDice = MutableList(5) { false }
         }
     }
@@ -88,12 +92,12 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(90.dp))
 
             if (!gameEnded) {
                 // === AI Display ===
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("AI", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("AI", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -107,15 +111,15 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text("Round Total: $roundAiTotal", fontSize = 18.sp, color = Color.White)
-                    Text("AI Total Score: $aiTotal", fontSize = 18.sp, color = Color.White)
+                    Text("Round Total: $roundAiTotal", fontSize = 18.sp, color = Color.Black)
+                    Text("AI Total Score: $aiTotal", fontSize = 18.sp, color = Color.Black)
                 }
 
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(50.dp))
 
                 // === Player Display ===
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("You", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("You", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -148,73 +152,117 @@ fun DiceGameUI(onBackClick: () -> Unit, onGameEnd: (Boolean) -> Unit) {
 
                     Spacer(modifier = Modifier.height(10.dp))
                     roundPlayerTotal = playerRolls.sum()
-                    Text("Round Total: $roundPlayerTotal", fontSize = 18.sp, color = Color.White)
-                    Text("Your Total Score: $playerTotal", fontSize = 18.sp, color = Color.White)
+                    Text("Round Total: $roundPlayerTotal", fontSize = 18.sp, color = Color.Black)
+                    Text("Your Total Score: $playerTotal", fontSize = 18.sp, color = Color.Black)
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(40.dp))
 
                     // === Roll Button ===
                     Button(
                         onClick = {
-                            if (rollCount == 1) {
-                                // First full roll (initial roll)
+                            if (rollCount == 0) {
+                                // First roll (roll all dice)
                                 playerRolls = List(5) { (1..6).random() }
                             } else {
-                                // Subsequent rounds (allow re-rolling selected dice or all dice)
-                                playerRolls = playerRolls.mapIndexed { i, v ->
-                                    if (selectedDice[i]) (1..6).random() else v
+                                // Reroll unselected dice
+                                playerRolls = playerRolls.mapIndexed { index, value ->
+                                    if (selectedDice[index]) value else (1..6).random()
                                 }
                             }
                             rollCount++  // Increment roll count after each roll
                             selectedDice = MutableList(5) { false }  // Reset selected dice after each roll
+
+                            // If it's the 3rd roll, calculate the score
+                            if (rollCount == 3) {
+                                roundPlayerTotal = playerRolls.sum()
+                                playerTotal += roundPlayerTotal
+
+                                // Check for game end condition
+                                if (playerTotal >= 101) {
+                                    gameEnded = true
+                                    playerWon = true
+                                } else {
+                                    isPlayerTurn = false
+                                }
+                            }
                         },
-                        enabled = isPlayerTurn && rollCount < 3,  // Allow 3 rolls: 1 initial + 2 subsequent rerolls
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black, contentColor = Color.White)
+                        enabled = isPlayerTurn && rollCount < 3,  // Allow 3 rolls (1 initial + 2 rerolls)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                     ) {
-                        Text("Roll (${rollCount}/3)", fontSize = 18.sp, fontWeight = FontWeight.Bold)  // Display the current roll count
+                        Text("Roll Dice",
+                        fontSize = 20.sp,
+                            )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // === Score Button ===
+                    Button(
+                        onClick = {
+                            // Save the current round score to the appropriate round
+                            if (rollCount == 1) {
+                                roundOneScore = roundPlayerTotal
+                            } else if (rollCount == 2) {
+                                roundTwoScore = roundPlayerTotal
+                            }
+
+                            // Stop rerolling and end the player's turn
+                            rollCount = 3
+                            selectedDice = MutableList(5) { false }
+
+                            // After scoring, let the AI take its turn
+                            isPlayerTurn = false
+                        },
+                        enabled = rollCount == 1 || rollCount == 2, // Allow score button only after 1st or 2nd roll
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                    ) {
+                        Text("Score",
+                            fontSize = 18.sp,)
+                    }
+                }
+            }
+
+            // === Game Result ===
+            if (gameEnded) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    //modifier = Modifier.align(Alignment.Center)
+                ) {
+                    Text(
+                        text = if (playerWon) "You Win!" else "AI Wins!",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = {
+                            // Restart the game
+                            playerTotal = 0
+                            aiTotal = 0
+                            rollCount = 0
+                            selectedDice = MutableList(5) { false }
+                            gameEnded = false
+                            isPlayerTurn = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                    ) {
+                        Text("Play Again",
+                                fontSize = 20.sp,)
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // === Keep Score Button ===
                     Button(
-                        onClick = {
-                            playerTotal += roundPlayerTotal
-                            if (playerTotal >= 101 || aiTotal >= 101) {
-                                gameEnded = true
-                                playerWon = playerTotal >= 101 && playerTotal > aiTotal
-                            } else {
-                                isPlayerTurn = false
-                            }
-                            rollCount = 1
-                            selectedDice = MutableList(5) { false }
-                        },
-                        enabled = isPlayerTurn,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray, contentColor = Color.White)
+                        onClick = onBackClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                     ) {
-                        Text("Keep Score", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("Back to Menu",
+                            fontSize = 20.sp,)
                     }
                 }
-
-                Spacer(modifier = Modifier.height(40.dp))
-                Text("Reach 101 to Win!", fontSize = 22.sp, fontFamily = FontFamily.Serif, color = Color.White)
-
-            } else {
-                WinOrLose(playerWon = playerWon, onBackClick = onBackClick)
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = onBackClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .fillMaxWidth(0.3f)
-                    .padding(bottom = 16.dp)
-            ) {
-                Text("Back", fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White)
             }
         }
     }

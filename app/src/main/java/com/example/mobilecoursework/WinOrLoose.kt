@@ -1,4 +1,4 @@
-package com.example.mobilecoursework
+/*package com.example.mobilecoursework
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -51,8 +51,9 @@ fun WinOrLose(playerWon: Boolean, onBackClick: () -> Unit) {
             ) {
                 Text("Back", fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White)
+                    color = Color.Black )
             }
         }
     }
 }
+*/

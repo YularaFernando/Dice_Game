@@ -38,8 +38,8 @@ fun MainScreen() {
     // If showGameScreen is true, display the DiceGameScreen
     if (showGameScreen) {
         DiceGameUI(onBackClick = { showGameScreen = false } ,
-        onGameEnd = { })
-    // Pass callback to go back
+            onGameEnd = { })
+        // Pass callback to go back
     } else {
         // Main UI
         Box(
@@ -74,7 +74,7 @@ fun MainScreen() {
                 ) {
                     Text(
                         text = "New Game",
-                        fontSize = 23.sp,
+                        fontSize = 27.sp,
                         fontFamily = FontFamily.Serif,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
@@ -93,7 +93,7 @@ fun MainScreen() {
                 ) {
                     Text(
                         text = "About",
-                        fontSize = 23.sp,
+                        fontSize = 27.sp,
                         fontFamily = FontFamily.Serif,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold
@@ -132,4 +132,3 @@ fun AboutDialog(onDismiss: () -> Unit) {
         }
     )
 }
-
